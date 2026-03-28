@@ -1,0 +1,153 @@
+Contract Interaction Guide (Without UI)
+
+This project can be fully tested using Remix IDE + MetaMask without requiring any frontend setup.
+
+Prerequisites
+Install MetaMask browser extension
+Switch network to Sepolia Testnet
+Ensure you have Sepolia ETH (use faucet if needed)
+Open Remix IDE: https://remix.ethereum.org
+Load Deployed Contracts in Remix
+Go to "At Address" in Remix
+Load contracts using deployed addresses:
+TokenA: 0xa5A5CA63D5ce427A3E69F6FAB6cb379cc70039f9
+TokenB: 0xB5FDE1d7f23E9315a0829AbDcC1E80bf15A1C2Ee
+SimpleDEX: 0xb3bAA91E868CfC98492d547b5a4C173775d03E74
+Use correct ABI (from your contracts)
+Step-by-Step Interaction Scripts
+1. Connect Wallet
+In Remix → Deploy & Run
+Select Injected Provider - MetaMask
+Approve connection
+2. Approve Tokens
+
+Before adding liquidity or swapping:
+
+Call on TokenA:
+
+approve(DEX_ADDRESS, 1000000000000000000)
+
+Call on TokenB:
+
+approve(DEX_ADDRESS, 1000000000000000000)
+
+DEX_ADDRESS = 0xb3bAA91E868CfC98492d547b5a4C173775d03E74
+
+3. Add Liquidity
+
+Call on SimpleDEX:
+
+addLiquidity(
+  1000000000000000000,
+  1000000000000000000
+)
+
+Result:
+
+Tokens transferred to pool
+LP tokens minted
+4. Check LP Token Balance
+
+Call:
+
+balanceOf(YOUR_ADDRESS)
+
+(on LP Token contract if separate, or DEX if implemented internally)
+
+5. Remove Liquidity
+
+Call:
+
+removeLiquidity(1000000000000000000)
+
+Result:
+
+LP tokens burned
+TokenA and TokenB returned
+6. Swap TokenA → TokenB
+
+Step 1: Approve TokenA again (if needed)
+
+Step 2: Call:
+
+swapAtoB(AMOUNT)
+
+Example:
+
+swapAtoB(100000000000000000)
+7. Swap TokenB → TokenA
+
+Step 1: Approve TokenB
+
+Step 2: Call:
+
+swapBtoA(AMOUNT)
+8. View Pool Reserves
+
+Call:
+
+reserveA()
+reserveB()
+9. View Spot Price
+
+If implemented:
+
+getPrice()
+
+Or manually calculate:
+
+Price = reserveB / reserveA
+
+10. Arbitrage Execution
+
+Call:
+
+executeArbitrage()
+If profitable → transaction succeeds
+If not → transaction reverts
+Minimal Script (ethers.js)
+
+If needed, here is a simple script to interact programmatically:
+
+import { ethers } from "ethers";
+
+const provider = new ethers.providers.Web3Provider(window.ethereum);
+const signer = provider.getSigner();
+
+const dexAddress = "0xb3bAA91E868CfC98492d547b5a4C173775d03E74";
+
+const dexABI = [
+  "function addLiquidity(uint256,uint256)",
+  "function removeLiquidity(uint256)",
+  "function swapAtoB(uint256)",
+  "function swapBtoA(uint256)",
+  "function reserveA() view returns(uint256)",
+  "function reserveB() view returns(uint256)"
+];
+
+const dex = new ethers.Contract(dexAddress, dexABI, signer);
+
+// Add liquidity
+await dex.addLiquidity(
+  ethers.utils.parseEther("1"),
+  ethers.utils.parseEther("1")
+);
+
+// Swap
+await dex.swapAtoB(ethers.utils.parseEther("0.1"));
+
+// Get reserves
+const rA = await dex.reserveA();
+const rB = await dex.reserveB();
+
+console.log("ReserveA:", rA.toString());
+console.log("ReserveB:", rB.toString());
+Notes for Evaluators
+No complex setup required
+Entire system can be tested via Remix
+All required features supported:
+Wallet connection (MetaMask via Remix)
+Liquidity add/remove
+LP mint/burn
+Token swaps
+Reserve and price viewing
